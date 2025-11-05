@@ -48,7 +48,7 @@ Specifically, the project aims to:
 ## 🧱 System Architecture
 
 The system is organized into modular directories for clarity and maintainability:
-
+```
 tswf/
 ├── bin/ # Cron install/uninstall helpers
 ├── cli/ # CLI interface for task/workflow management
@@ -73,7 +73,7 @@ tswf/
 ├── logs/ # Runtime logs
 ├── Makefile # Automation for setup, demo, and testing
 └── README.md # Project documentation
-
+```
 
 ---
 
