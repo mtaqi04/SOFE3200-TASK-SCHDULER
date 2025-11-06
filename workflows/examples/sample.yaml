@@ -1,4 +1,3 @@
-```yaml
 tasks:
   - name: clean_temp
     cmd: rm -rf /tmp/workflow_demo/
