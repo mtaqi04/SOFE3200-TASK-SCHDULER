@@ -1,0 +1,24 @@
+```yaml
+tasks:
+  - name: clean_temp
+    cmd: rm -rf /tmp/workflow_demo/
+
+  - name: download_files
+    cmd: wget https://example.com/files.zip -O /tmp/workflow_demo/files.zip
+    depends_on:
+      - clean_temp
+
+  - name: extract_files
+    cmd: unzip /tmp/workflow_demo/files.zip -d /tmp/workflow_demo/
+    depends_on:
+      - download_files
+
+  - name: process_files
+    cmd: python3 scripts/process_data.py /tmp/workflow_demo/
+    depends_on:
+      - extract_files
+
+  - name: upload_results
+    cmd: bash scripts/upload.sh /tmp/workflow_demo/output/
+    depends_on:
+      - process_files
