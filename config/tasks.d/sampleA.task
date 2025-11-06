@@ -1,0 +1,5 @@
+# TSWF task definition
+NAME="sampleA"
+CMD="./tests/fixtures/sample_task_A.sh"
+CRON="*/2 * * * *"
+DESC="Example A"
