@@ -36,15 +36,11 @@ Uses mailx or sendmail for sending messages directly within Ubuntu.
 
 ## 🧩 Notes
 
--Works locally — no Gmail or external SMTP setup needed.
+- Works locally — no Gmail or external SMTP setup needed.
+- Uses mailx or sendmail already available in Ubuntu.
+- No changes were required in scheduler.sh or logging.sh for this sprint.
+- You can replace "your@username" in the command with any local Ubuntu username to deliver mail to that user.
 
--Uses mailx or sendmail already available in Ubuntu.
-
--No changes were required in scheduler.sh or logging.sh for this sprint.
-
-- All emails are logged through the same logging system as the scheduler.
-
-- You can replace "student" in the command with any local Ubuntu username to deliver mail to that user.
 ## 👧 Author
 
-Khushi Patel - Sprint 1
+*Khushi Patel - Sprint 1*
