@@ -16,13 +16,6 @@ Usage:
   tswf.sh workflow run --file PATH [--verbose]
   tswf.sh install-cron
   tswf.sh uninstall-cron
-
-Examples:
-  tswf.sh task add --name sampleA --cmd './tests/fixtures/sample_task_A.sh' --cron '*/2 * * * *'
-  tswf.sh task rm --name sampleA --yes
-  tswf.sh task run --name sampleA
-  tswf.sh workflow run --file workflows/examples/sample.yaml
-  tswf.sh install-cron
 USAGE
 }
 
@@ -37,11 +30,9 @@ case "$cmd" in
     sub="${1:-}"; shift || true
     case "$sub" in
       add)
-        # Pass-through to scheduler/register_task.sh
         "$ROOT_DIR/scheduler/register_task.sh" "$@"
         ;;
       rm|remove)
-        # Accept --name NAME [--yes]
         NAME=""
         YES=""
         while [[ $# -gt 0 ]]; do
@@ -64,8 +55,9 @@ case "$cmd" in
         done
         [[ -n "$NAME" ]] || { echo "task run requires --name"; exit 2; }
 
-        # Load logging and task definition
+        # Load logging + task definition
         ensure_file "$ROOT_DIR/scheduler/lib/logging.sh"
+        # shellcheck disable=SC1091
         source "$ROOT_DIR/scheduler/lib/logging.sh"
 
         task_file="$ROOT_DIR/config/tasks.d/${NAME}.task"
@@ -74,17 +66,21 @@ case "$cmd" in
         source "$task_file"
 
         run_id="$(date +%s%N)"
-        log_info "task" "run_id=${run_id} task=${NAME} start cmd=${CMD}"
+
+        log_info "task" "run_id=${run_id} task=${NAME} event=start cmd=\"${CMD}\""
+
         set +e
         bash -c "$CMD"
         code=$?
         set -e
+
         if [[ $code -eq 0 ]]; then
-          log_info "task" "run_id=${run_id} task=${NAME} end exit=${code}"
+          log_info "task" "run_id=${run_id} task=${NAME} event=finish exit=${code}"
         else
-          log_err  "task" "run_id=${run_id} task=${NAME} end exit=${code}"
+          log_err  "task" "run_id=${run_id} task=${NAME} event=finish exit=${code}"
         fi
-        exit $code
+
+        exit "$code"
         ;;
       ls)
         printf "%-20s | %-17s | %s\n" "NAME" "CRON" "COMMAND"
@@ -97,7 +93,8 @@ case "$cmd" in
         done
         shopt -u nullglob
         ;;
-      *) usage; exit 2;;
+      *)
+        usage; exit 2;;
     esac
     ;;
   workflow)
@@ -108,7 +105,7 @@ case "$cmd" in
         while [[ $# -gt 0 ]]; do
           case "$1" in
             --file) FILE="$2"; shift 2;;
-            --verbose) : ;; # reserved
+            --verbose) : ;; # reserved for future
             *) shift;;
           esac
         done

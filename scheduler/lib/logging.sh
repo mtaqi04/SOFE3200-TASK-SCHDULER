@@ -1,23 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Logging utility for TSWF
-# Provides log_info, log_warn, and log_err functions
-# Each entry is timestamped and appended to logs/tswf.log
+# TSWF Logging Library
+# Produces structured, grep-friendly logs in logs/tswf.log
+#
+# Format:
+#   timestamp=<ISO8601> level=<LEVEL> component=<NAME> <extra key=value fields/message>
+#
+# Callers are expected to include structured fields like:
+#   run_id=..., task=..., exit=..., msg="..."
 
-__tswf_log_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/logs"
+# Resolve repo root (two levels up: scheduler/lib -> scheduler -> root)
+__tswf_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+__tswf_log_dir="${__tswf_root}/logs"
 __tswf_log_file="${__tswf_log_dir}/tswf.log"
+
 mkdir -p "$__tswf_log_dir"
 
-__tswf_log() {
-  local level="$1"; shift
-  local module="$1"; shift
-  local msg="$*"
-  local ts
-  ts="$(date '+%Y-%m-%d %H:%M:%S')"
-  printf "[%s] [%s] [%s] %s\n" "$ts" "$level" "$module" "$msg" >> "$__tswf_log_file"
+_ts() {
+  # ISO 8601 timestamp
+  date +"%Y-%m-%dT%H:%M:%S%z"
 }
 
-log_info() { __tswf_log "INFO" "$@"; }
-log_warn() { __tswf_log "WARN" "$@"; }
-log_err()  { __tswf_log "ERROR" "$@"; }
+_tswf_log() {
+  local level="$1"; shift
+  local component="$1"; shift
+  local msg="$*"
+
+  # If no extra fields provided, still log cleanly
+  if [[ -z "$msg" ]]; then
+    printf "timestamp=%s level=%s component=%s\n" "$(_ts)" "$level" "$component" >> "$__tswf_log_file"
+  else
+    printf "timestamp=%s level=%s component=%s %s\n" "$(_ts)" "$level" "$component" "$msg" >> "$__tswf_log_file"
+  fi
+}
+
+log_info() { _tswf_log "INFO" "$@"; }
+log_warn() { _tswf_log "WARN" "$@"; }
+log_err()  { _tswf_log "ERROR" "$@"; }
