@@ -1,6 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ============================================================
+# TSWF - Task Scheduling & Workflow CLI
+# Exit Code Reference:
+# 0 = Success
+# 1 = General Error
+# 2 = Invalid Arguments
+# 3 = Missing File
+# 4 = Task Execution Failed
+# 5 = Permission Denied
+# 6 = Workflow Error
+# ============================================================
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PATH="$ROOT_DIR/bin:$PATH"
 
@@ -19,8 +31,10 @@ Usage:
 USAGE
 }
 
+# Ensures a file exists; otherwise exits with "Missing File" code (3)
+
 ensure_file() {
-  [[ -f "$1" ]] || { echo "Missing required file: $1" >&2; exit 1; }
+  [[ -f "$1" ]] || { echo "Missing required file: $1" >&2; exit 3; }
 }
 
 cmd="${1:-}"; shift || true
@@ -42,7 +56,7 @@ case "$cmd" in
             *) shift;;
           esac
         done
-        [[ -n "$NAME" ]] || { echo "task rm requires --name"; exit 2; }
+        [[ -n "$NAME" ]] || { echo "task rm requires --name"; exit 2; } # Invalid arguments error
         "$ROOT_DIR/scheduler/remove_task.sh" "$NAME" "$YES"
         ;;
       run)
@@ -53,7 +67,7 @@ case "$cmd" in
             *) shift;;
           esac
         done
-        [[ -n "$NAME" ]] || { echo "task run requires --name"; exit 2; }
+        [[ -n "$NAME" ]] || { echo "task run requires --name"; exit 2; } # Invalid arguments error
 
         # Load logging + task definition
         ensure_file "$ROOT_DIR/scheduler/lib/logging.sh"
@@ -76,11 +90,11 @@ case "$cmd" in
 
         if [[ $code -eq 0 ]]; then
           log_info "task" "run_id=${run_id} task=${NAME} event=finish exit=${code}"
+          exit 0 # Success
         else
           log_err  "task" "run_id=${run_id} task=${NAME} event=finish exit=${code}"
+          exit 4  # Task Execution Failed
         fi
-
-        exit "$code"
         ;;
       ls)
         printf "%-20s | %-17s | %s\n" "NAME" "CRON" "COMMAND"
@@ -94,7 +108,9 @@ case "$cmd" in
         shopt -u nullglob
         ;;
       *)
-        usage; exit 2;;
+        usage; 
+        exit 2 # Invalid Arguments
+        ;;
     esac
     ;;
   workflow)
@@ -110,16 +126,16 @@ case "$cmd" in
           esac
         done
         [[ -n "$FILE" ]] || { echo "workflow run requires --file"; exit 2; }
-        "$ROOT_DIR/workflows/engine.sh" "$FILE"
+        "$ROOT_DIR/workflows/engine.sh" "$FILE" || exit 6  # Workflow Error
         ;;
       *) usage; exit 2;;
     esac
     ;;
   install-cron)
-    "$ROOT_DIR/bin/install_cron.sh"
+    "$ROOT_DIR/bin/install_cron.sh" || exit 5  # Permission Denied
     ;;
   uninstall-cron)
-    "$ROOT_DIR/bin/uninstall_cron.sh"
+    "$ROOT_DIR/bin/uninstall_cron.sh" || exit 5  # Permission Denied
     ;;
   -h|--help|"")
     usage
@@ -127,5 +143,6 @@ case "$cmd" in
   *)
     echo "Unknown command: $cmd"
     usage
+    exit 2  # Invalid Arguments
     ;;
 esac
