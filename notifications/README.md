@@ -3,6 +3,7 @@
 ### Purpose
 Implements the send_email() function for local email notifications in the scheduler project.
 Uses mailx or sendmail for sending messages directly within Ubuntu.
+Automatically retries failed email sends up to 3 times, with a 5-second delay between attempts.
 
 ## 📂 Files Overview
 | File | Location | Description |
@@ -10,7 +11,7 @@ Uses mailx or sendmail for sending messages directly within Ubuntu.
 | **email.sh** | `notifications/` | Main script containing the `send_email()` function |
 | **task_complete.txt** | `notifications/templates/` | Email message template for successful task completion |
 | **email.env.example** | `config/env/` | Example configuration file for email setup (can be copied to `email.env`) |
-| **test_email.sh** | `tests/` | Test script for verifying the email functionality |
+| **test_email.sh** | `tests/` | Test script for verifying the email functionality and retry behavior |
 
 
 ## ⚙️ Setup
@@ -43,4 +44,4 @@ Uses mailx or sendmail for sending messages directly within Ubuntu.
 
 ## 👧 Author
 
-*Khushi Patel - Sprint 1*
+*Khushi Patel*
