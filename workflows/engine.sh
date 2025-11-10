@@ -10,6 +10,12 @@ retry_delay=5
 
 WORKFLOW_FILE=$1
 
+workflow_success=true
+
+#defining root and the current dir
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(cd "${here}/.." && pwd)"
+
 # Check if workflow file path is given
 if [[ -z "$WORKFLOW_FILE" ]]; then
   echo "Usage: $0 <workflow_yaml_file>"
@@ -71,12 +77,25 @@ for i in "${!TASK_NAMES[@]}"; do
 
   # If still failed after all retries
   if [[ $success == false ]]; then
+    workflow_success=false
     echo "Task '$NAME' failed after $max_retries attempts. Moving to next task."
     exit 4  # Task Execution Failed
   fi
 
   echo "-----------------------------------------"
 done
+
+# Load email function
+source "${root}/notifications/email.sh"
+
+recipient="student" # <-- change this email to a local user
+
+# Sending SUmmary email
+if [[ $workflow_success == true ]]; then
+    send_email "$recipient" "Workflow Completed ✅" "workflow_success"
+else
+    send_email "$recipient" "Workflow Failed ❌" "workflow_failure"
+fi
 
 echo "🎯 Workflow execution complete!"
 exit 0 # Success

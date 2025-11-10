@@ -95,4 +95,8 @@ send_email() {
   fi
 
   return 0 # SUccess
+
 }
+
+# Make the function available when sourced
+export -f send_email
