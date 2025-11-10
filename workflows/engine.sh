@@ -1,11 +1,10 @@
 #!/bin/bash
 # ==========================================================
 # engine.sh — DAG Workflow Executor with Topological Order
-# Reads a YAML workflow file, respects depends_on fields,
-# and executes tasks in dependency order with retry logic.
+# Supports depends_on, per-task on_fail policies, and retries.
 # ==========================================================
 
-max_retries=3
+max_retries_default=3
 retry_delay=5
 
 WORKFLOW_FILE=$1
@@ -32,7 +31,7 @@ echo "🔧 Running workflow from: $WORKFLOW_FILE"
 echo "========================================="
 
 # ----------------------------------------------------------
-# Parse YAML: extract tasks, cmds, and depends_on
+# Parse YAML: extract tasks, cmds, depends_on, on_fail
 # ----------------------------------------------------------
 parse_yaml() {
   local yaml_file=$1
@@ -40,9 +39,9 @@ parse_yaml() {
   tasks=()
   declare -gA cmds
   declare -gA deps
+  declare -gA on_fail
 
   while IFS= read -r line; do
-    # Trim whitespace
     line="${line#"${line%%[![:space:]]*}"}"
     line="${line%"${line##*[![:space:]]}"}"
 
@@ -56,7 +55,11 @@ parse_yaml() {
     elif [[ $line == "-"* && -n "${deps[$current_task]+x}" ]]; then
       dep=$(echo "$line" | awk '{print $2}')
       deps["$current_task"]+="$dep "
+    elif [[ $line == "on_fail:"* ]]; then
+    value=$(echo "$line" | awk -F': ' '{print $2}' | cut -d'#' -f1 | xargs)
+    on_fail["$current_task"]="$value"
     fi
+
   done < "$yaml_file"
 }
 
@@ -101,11 +104,22 @@ echo "-----------------------------------------"
 # ----------------------------------------------------------
 for name in "${sorted_tasks[@]}"; do
   cmd="${cmds[$name]}"
+  policy="${on_fail[$name]:-retry:$max_retries_default}"  # proper variable expansion
+  policy=$(echo "$policy" | xargs)  # remove trailing spaces
+
   echo "▶️  Running task: $name"
   echo "   Command: $cmd"
+  echo "   on_fail policy: $policy"
 
   attempt=1
   success=false
+
+  # Determine retries from policy
+  if [[ $policy == retry:* ]]; then
+    max_retries=$(echo "${policy#retry:}" | xargs)  # trim spaces
+  else
+    max_retries=1
+  fi
 
   while [ $attempt -le $max_retries ]; do
     echo "   Attempt $attempt of $max_retries..."
@@ -116,16 +130,35 @@ for name in "${sorted_tasks[@]}"; do
       echo "✅ Task '$name' completed successfully."
       success=true
       break
-    else
-      echo "❌ Task '$name' failed (exit code $status). Retrying in $retry_delay seconds..."
-      ((attempt++))
-      sleep $retry_delay
     fi
+
+    case "$policy" in
+      skip)
+        echo "⚠️ Task '$name' failed. Skipping due to policy."
+        success=false
+        break
+        ;;
+      continue)
+        echo "⚠️ Task '$name' failed. Continuing due to policy."
+        workflow_success=false
+        success=false
+        break
+        ;;
+      retry:*)
+        echo "❌ Task '$name' failed (exit code $status). Retrying in $retry_delay seconds..."
+        ((attempt++))
+        sleep $retry_delay
+        ;;
+      *)
+        echo "❌ Task '$name' failed (exit code $status). Unknown policy. Stopping workflow."
+        exit 4
+        ;;
+    esac
   done
 
-  if [[ $success == false ]]; then
+  if [[ $success == false && $policy == retry:* && $attempt -gt $max_retries ]]; then
+    echo "❌ Task '$name' failed after $max_retries attempts."
     workflow_success=false
-    echo "Task '$name' failed after $max_retries attempts."
     exit 4
   fi
 

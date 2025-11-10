@@ -1,21 +1,31 @@
 tasks:
   - name: greet
     cmd: echo "Hello from the workflow!"
+    on_fail: retry:2   # will retry 2 times if fails
 
   - name: make_dir
     cmd: mkdir -p /tmp/workflow_demo/
+    on_fail: skip      # if it fails, skip and continue to next
 
   - name: write_file
     cmd: bash -c 'echo test > /tmp/workflow_demo/test.txt'
     depends_on:
       - make_dir
+    on_fail: retry:3   # retry up to 3 times
 
   - name: list_files
     cmd: ls -l /tmp/workflow_demo/
     depends_on:
       - write_file
+    on_fail: continue  # continue workflow even if this fails
+
+  - name: fail_task
+    cmd: ls /non_existent_dir
+    on_fail: skip      # will fail and skip
 
   - name: goodbye
     cmd: echo "Workflow complete!"
     depends_on:
       - list_files
+      - fail_task
+    on_fail: retry:1   # just 1 retry
