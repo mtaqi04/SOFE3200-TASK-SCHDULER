@@ -1,101 +1,148 @@
 #!/bin/bash
 # ==========================================================
-# engine.sh — Linear Workflow Executor (Improved Parsing)
-# Reads a YAML workflow file and executes tasks sequentially.
-# Each failed task will be retried up to 3 times (5s delay).
+# engine.sh — DAG Workflow Executor with Topological Order
+# Reads a YAML workflow file, respects depends_on fields,
+# and executes tasks in dependency order with retry logic.
 # ==========================================================
 
 max_retries=3
 retry_delay=5
 
 WORKFLOW_FILE=$1
-
 workflow_success=true
 
-#defining root and the current dir
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 root="$(cd "${here}/.." && pwd)"
 
-# Check if workflow file path is given
 if [[ -z "$WORKFLOW_FILE" ]]; then
   echo "Usage: $0 <workflow_yaml_file>"
-  exit 2 # For invalid arguments
+  exit 2
 fi
 
-# Check if file exists
+if [[ ! "$WORKFLOW_FILE" = /* ]]; then
+  WORKFLOW_FILE="${here}/${WORKFLOW_FILE}"
+fi
+
 if [[ ! -f "$WORKFLOW_FILE" ]]; then
   echo "Error: File '$WORKFLOW_FILE' not found!"
-  exit 3 # Misiing file
+  exit 3
 fi
 
 echo "🔧 Running workflow from: $WORKFLOW_FILE"
 echo "========================================="
 
-# Parse names and commands properly (preserve spacing)
-TASK_NAMES=($(grep -E "^- name:" "$WORKFLOW_FILE" | sed 's/^- name:[[:space:]]*//'))
-TASK_CMDS=()
-while IFS= read -r line; do
-  if [[ "$line" =~ ^[[:space:]]*cmd: ]]; then
-    cmd="${line#*: }"
-    TASK_CMDS+=("$cmd")
+# ----------------------------------------------------------
+# Parse YAML: extract tasks, cmds, and depends_on
+# ----------------------------------------------------------
+parse_yaml() {
+  local yaml_file=$1
+  local current_task=""
+  tasks=()
+  declare -gA cmds
+  declare -gA deps
+
+  while IFS= read -r line; do
+    # Trim whitespace
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+
+    if [[ $line == "- name:"* ]]; then
+      current_task=$(echo "$line" | awk -F': ' '{print $2}')
+      tasks+=("$current_task")
+    elif [[ $line == "cmd:"* ]]; then
+      cmds["$current_task"]=$(echo "$line" | awk -F': ' '{print $2}')
+    elif [[ $line == "depends_on:"* ]]; then
+      deps["$current_task"]=""
+    elif [[ $line == "-"* && -n "${deps[$current_task]+x}" ]]; then
+      dep=$(echo "$line" | awk '{print $2}')
+      deps["$current_task"]+="$dep "
+    fi
+  done < "$yaml_file"
+}
+
+parse_yaml "$WORKFLOW_FILE"
+
+# ----------------------------------------------------------
+# Topological Sort
+# ----------------------------------------------------------
+sorted_tasks=()
+declare -A visited
+declare -A temp_mark
+
+visit_task() {
+  local task=$1
+
+  if [[ ${temp_mark[$task]} == 1 ]]; then
+    echo "❌ Circular dependency detected at task: $task"
+    exit 5
   fi
-done < "$WORKFLOW_FILE"
 
-# Check for mismatch between names and commands
-if [[ ${#TASK_NAMES[@]} -ne ${#TASK_CMDS[@]} ]]; then
-  echo "⚠️  Warning: mismatch between number of names and commands"
-fi
+  if [[ -z ${visited[$task]} ]]; then
+    temp_mark[$task]=1
+    for dep in ${deps[$task]}; do
+      [[ -n "$dep" ]] && visit_task "$dep"
+    done
+    temp_mark[$task]=0
+    visited[$task]=1
+    sorted_tasks+=("$task")
+  fi
+}
 
-# Execute tasks sequentially
-for i in "${!TASK_NAMES[@]}"; do
-  NAME="${TASK_NAMES[$i]}"
-  CMD="${TASK_CMDS[$i]}"
+for t in "${tasks[@]}"; do
+  [[ -z ${visited[$t]} ]] && visit_task "$t"
+done
 
-  echo "▶️  Running task: $NAME"
-  echo "   Command: $CMD"
+echo "📋 Execution order:"
+printf "  %s\n" "${sorted_tasks[@]}"
+echo "-----------------------------------------"
+
+# ----------------------------------------------------------
+# Execute tasks in topological order
+# ----------------------------------------------------------
+for name in "${sorted_tasks[@]}"; do
+  cmd="${cmds[$name]}"
+  echo "▶️  Running task: $name"
+  echo "   Command: $cmd"
 
   attempt=1
   success=false
 
-  # Retry loop for each task
   while [ $attempt -le $max_retries ]; do
     echo "   Attempt $attempt of $max_retries..."
+    eval "$cmd"
+    status=$?
 
-    eval "$CMD"
-    STATUS=$?
-
-    if [[ $STATUS -eq 0 ]]; then
-      echo "✅ Task '$NAME' completed successfully on attempt $attempt."
+    if [[ $status -eq 0 ]]; then
+      echo "✅ Task '$name' completed successfully."
       success=true
       break
     else
-      echo "❌ Task '$NAME' failed (exit code $STATUS). Retrying in $retry_delay seconds..."
+      echo "❌ Task '$name' failed (exit code $status). Retrying in $retry_delay seconds..."
       ((attempt++))
       sleep $retry_delay
     fi
   done
 
-  # If still failed after all retries
   if [[ $success == false ]]; then
     workflow_success=false
-    echo "Task '$NAME' failed after $max_retries attempts. Moving to next task."
-    exit 4  # Task Execution Failed
+    echo "Task '$name' failed after $max_retries attempts."
+    exit 4
   fi
 
   echo "-----------------------------------------"
 done
 
-# Load email function
+# ----------------------------------------------------------
+# Send email notification
+# ----------------------------------------------------------
 source "${root}/notifications/email.sh"
+recipient="student"
 
-recipient="student" # <-- change this email to a local user
-
-# Sending SUmmary email
 if [[ $workflow_success == true ]]; then
-    send_email "$recipient" "Workflow Completed ✅" "workflow_success"
+  send_email "$recipient" "Workflow Completed ✅" "workflow_success"
 else
-    send_email "$recipient" "Workflow Failed ❌" "workflow_failure"
+  send_email "$recipient" "Workflow Failed ❌" "workflow_failure"
 fi
 
 echo "🎯 Workflow execution complete!"
-exit 0 # Success
+exit 0

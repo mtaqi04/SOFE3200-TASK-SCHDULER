@@ -1,15 +1,21 @@
 tasks:
-- name: greet
-  cmd: echo "Hello from the workflow!"
+  - name: greet
+    cmd: echo "Hello from the workflow!"
 
-- name: make_dir
-  cmd: mkdir -p /tmp/workflow_demo/
+  - name: make_dir
+    cmd: mkdir -p /tmp/workflow_demo/
 
-- name: write_file
-  cmd: bash -c 'echo test > /tmp/workflow_demo/test.txt'
+  - name: write_file
+    cmd: bash -c 'echo test > /tmp/workflow_demo/test.txt'
+    depends_on:
+      - make_dir
 
-- name: list_files
-  cmd: ls -l /tmp/workflow_demo/
+  - name: list_files
+    cmd: ls -l /tmp/workflow_demo/
+    depends_on:
+      - write_file
 
-- name: goodbye
-  cmd: echo "Workflow complete!"
+  - name: goodbye
+    cmd: echo "Workflow complete!"
+    depends_on:
+      - list_files
