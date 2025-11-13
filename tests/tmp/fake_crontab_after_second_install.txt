@@ -1,0 +1,20 @@
+SHELL=/bin/bash
+# existing job
+* * * * * echo "hello from existing"
+
+# BEGIN TSWF
+# (managed by bin/install_cron.sh)
+# BEGIN sample_tasks.cron
+# TSWF sample cron entries
+# Each line will be merged into user crontab by bin/install_cron.sh
+# Format: <cron_time> cd <repo_path> && <command> # TSWF <task_name>
+# Run Task A every 2 minutes
+*/2 * * * * cd /path/to/tswf && ./cli/tswf.sh task run --name sampleA  # TSWF sampleA
+# Run Task B every 3 minutes
+*/3 * * * * cd /path/to/tswf && ./cli/tswf.sh task run --name sampleB  # TSWF sampleB
+# END sample_tasks.cron
+*/2 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name sampleA # TSWF name=sampleA
+*/3 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name sampleB # TSWF name=sampleB
+*/5 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name task_ok # TSWF name=task_ok
+*/5 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name task_fail # TSWF name=task_fail
+# END TSWF

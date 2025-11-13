@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+: "${TSWF_FAKE_CRONTAB:?TSWF_FAKE_CRONTAB not set}"
+
+case "${1-}" in
+  -l)
+    # Print current fake crontab; exit non-zero if not present to mimic real crontab
+    if [[ -f "$TSWF_FAKE_CRONTAB" ]]; then
+      cat "$TSWF_FAKE_CRONTAB"
+      exit 0
+    else
+      exit 1
+    fi
+    ;;
+  -)
+    # Read stdin and overwrite fake crontab file
+    cat > "$TSWF_FAKE_CRONTAB"
+    ;;
+  *)
+    echo "fake crontab: unsupported args: $*" >&2
+    exit 2
+    ;;
+esac
