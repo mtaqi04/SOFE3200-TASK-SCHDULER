@@ -1,0 +1,5 @@
+- name: stepA
+  cmd: /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER/tests/fixtures/workflow_step_A.sh
+- name: stepB
+  cmd: /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER/tests/fixtures/workflow_step_B.sh
+  depends_on: [stepA]
