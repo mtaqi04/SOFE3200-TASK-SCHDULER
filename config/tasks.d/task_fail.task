@@ -1,0 +1,5 @@
+# TSWF task definition
+NAME="task_fail"
+CMD="/Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER/tests/fixtures/task_fail.sh"
+CRON="*/5 * * * *"
+DESC="unit test fail"

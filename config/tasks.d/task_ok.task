@@ -1,0 +1,5 @@
+# TSWF task definition
+NAME="task_ok"
+CMD="/Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER/tests/fixtures/task_ok.sh"
+CRON="*/5 * * * *"
+DESC="unit test ok"

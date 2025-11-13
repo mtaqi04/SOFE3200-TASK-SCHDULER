@@ -1,2 +1,4 @@
 */2 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name sampleA # TSWF name=sampleA
 */3 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name sampleB # TSWF name=sampleB
+*/5 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name task_ok # TSWF name=task_ok
+*/5 * * * * cd /Users/user/Documents/GitHub/SOFE3200-TASK-SCHDULER && ./cli/tswf.sh task run --name task_fail # TSWF name=task_fail
