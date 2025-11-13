@@ -1,0 +1,16 @@
+# Nested dependency workflow with a failing step.
+# Logical structure: root -> child -> failing -> leaf
+- name: root
+  cmd: ./tests/fixtures/nested_step_root.sh
+
+- name: child
+  cmd: ./tests/fixtures/nested_step_child.sh
+  depends_on: [root]
+
+- name: failing
+  cmd: ./tests/fixtures/nested_step_fail.sh
+  depends_on: [child]
+
+- name: leaf
+  cmd: ./tests/fixtures/nested_step_leaf.sh
+  depends_on: [failing]
