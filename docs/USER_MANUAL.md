@@ -106,13 +106,66 @@ Executes a multi-step workflow defined in a simple YAML file.
 ### 3. Email Utility (`email.sh`) ✉️
 
 #### Purpose
-Provides the `send_email` function to send notification emails using system utilities (`mailx` or `sendmail`).
+Provides the `send_email` function to send notification emails using system utilities, including automatic retry logic.
 
-#### Feature
-Includes retry logic: the function will attempt to send the email **up to 3 times**, with a **5-second delay** between attempts upon failure.
+### Dependency and Usage
+The utility attempts to use local mail programs in order of preference:
+1. `mailx` *Preferred*
+2. `sendmail` *Fallback*
+
+To use the functionality, the script must be sourced to make the `send_email` function available:
+
+```
+source ./bin/email.sh
+send_email "user@example.com" "Subject" "template_name"
+```
+
+#### Template Structure
+Email body content is loaded from simple plain text files:
+```
+<TSWF_ROOT>/bin/templates/<template_name>.txt
+```
+
+#### Retry Mechanism
+The `send_email` function is fault-tolerant and includes automatic retry handling to recover from temporary network or mail server issues:
+
+- **Attempts:** Retries up to **3 times**  
+- **Delay:** Waits **5 seconds** between each failed attempt
 
 #### Exit Conventions (`send_email` Return Codes)
-- **0** — Success after any number of attempts  
-- **1** — Invalid arguments or missing email template file  
-- **2** — Missing system mail utility (`mailx` or `sendmail`)  
-- **3** — Failed after the maximum number of retries (3 attempts)
+- **0:** Success after any number of attempts  
+- **1:** Invalid arguments or missing email template file  
+- **2:** Missing system mail utility (`mailx` or `sendmail`)  
+- **3:** Failed after the maximum number of retries (3 attempts)
+
+## Unified Logging
+All TSWF components use structured logging to provide easily searchable, chronological records of activity and failures.
+
+### Log Format
+Logs follow a consistent `KEY=VALUE` format appended to a timestamp, facilitating programmatic parsing.
+
+```[TIMESTAMP] component=[NAME] [KEY=VALUE] [KEY=VALUE] ...```
+
+### Example (Workflow Failure):
+
+```2024-11-16T12:32:11Z component=workflow run_id=12345 step=stepB event=finish exit=1```
+
+### Log Levels
+
+Components use the following logging functions:
+| Function   | Level        | Usage Description |
+|------------|--------------|-------------------|
+| `log_info` | Information  | Records routine events (e.g., start, finish, task found). |
+| `log_warn` | Warning      | Records non-critical issues (e.g., empty workflow, config not found). |
+| `log_err`  | Error        | Records failures and triggers immediate exits. |
+
+
+### Log Location
+Logs are stored locally within the TSWF project structure, usually in the  `logs/` directory.
+
+
+### Development Mode (Mocking)
+
+During development or testing, you can prevent actual emails from being sent by setting the `MOCK_EMAIL` environment variable. The email content and status will instead be printed to the console/log.
+
+```export MOCK_EMAIL=1```
