@@ -1,9 +1,9 @@
-Task Scheduling & Workflow Framework (TSWF)
-System Architecture & Technical Overview
+# Task Scheduling & Workflow Framework (TSWF)
+## System Architecture & Technical Overview
 
 This document provides a polished, presentation‑ready Markdown report describing the architecture, design principles, and runtime behavior of the Task Scheduling & Workflow Framework (TSWF). It is formatted for inclusion in the final project submission.
 
-📌 1. Introduction
+## 📌 1. Introduction
 
 The Task Scheduling & Workflow Framework (TSWF) is a lightweight, Bash‑based automation system designed to:
 
@@ -90,23 +90,20 @@ Produce structured logs for debugging
 
 The scheduler delegates all logging to the logging subsystem.
 
-2.5 Logging Framework — scheduler/lib/logging.sh
+### 2.5 Logging Framework — `scheduler/lib/logging.sh`
 
-Logs use a consistent, machine‑readable format:
+Logs use a consistent, machine‑readable format to ensure traceability and easy debugging:
 
-timestamp=2025-01-01T12:00:00 level=INFO component=task run_id=123 step=start ...
+`timestamp=2025-01-01T12:00:00 level=INFO component=task run_id=123 step=start ...`
 
 It records:
 
-Scheduler events
+* Scheduler events
+* Task executions
+* Workflow step executions
+* Failures & exit codes
 
-Task executions
-
-Workflow step executions
-
-Failures & exit codes
-
-This structure makes debugging and automated testing easy.
+This structure makes debugging and automated testing easy. **Log files are stored in the project's dedicated `logs/` directory.**
 
 2.6 Workflow Engine — workflows/engine.sh
 
@@ -121,14 +118,10 @@ tasks:
     cmd: ./scripts/test.sh
     depends_on: [build]
 
-Features
-
+Features:
 - Executes tasks in order based on dependencies
-
 - Stops on failure (unless DSL rules override)
-
 - Logs every workflow event
-
 - Supports nested and multi-level dependencies
 
 2.7 Workflow Validator — workflows/validator.sh
@@ -138,21 +131,49 @@ The Workflow Validator checks workflow files for structure and correctness befor
 What It Validates - 
 
 - Valid YAML syntax
-
 - Required fields: name, cmd
-
 - Unique task names
-
 - Valid depends_on references
-
 - Correct on_fail formats (skip, continue, retry:N)
 
 Usage
 
 ./workflows/validator.sh workflows/sample.yaml
 
-
 A workflow must pass validation before the engine executes it.
+
+### 2.8 Standardized Exit Codes
+
+A core reliability feature of TSWF is the use of **standardized exit codes** across all components (CLI, Scheduler, Engine). This allows external systems and internal scripts to reliably interpret execution outcomes.
+
+| Code | Meaning | Failure Context Example |
+| :--- | :--- | :--- |
+| **0** | **Success** | Script completed successfully. |
+| **1** | **General Error** | Unknown or unspecified error (e.g., generic file access failure). |
+| **2** | **Invalid Arguments** | Missing required input parameters (e.g., no `--name` provided). |
+| **3** | **Missing File** | A required configuration (`.task`), workflow (`.yaml`), or email template was not found. |
+| **4** | **Task Execution Failed** | A manually or scheduled task command returned a non-zero exit code. |
+| **5** | **Permission Denied** | Setup/teardown failed due to insufficient user rights (e.g., `install-cron`). |
+| **6** | **Workflow Error** | The workflow engine failed during step execution or dependency parsing. |
+
+---
+
+### 2.9 Email Notification Utility - `bin/email.sh`
+
+The `email.sh` utility provides a centralized, fault-tolerant mechanism for sending notifications. It relies on system mail utilities (`mailx` preferred, `sendmail` fallback).
+
+#### Reliability Features
+The `send_email` function includes **automatic retry logic**:
+* **Attempts:** Up to **3 retries** are performed.
+* **Delay:** A **5-second delay** is enforced between attempts.
+
+#### Utility Exit Conventions
+When the utility script is called, it returns specific codes detailing the notification process status:
+
+* **0 (Success):** Email was sent successfully (on any attempt).
+* **1 (Invalid Input):** Missing arguments or the required template file (`bin/templates/*.txt`) was not found.
+* **2 (Dependency Failure):** Neither `mailx` nor `sendmail` utility was found on the system.
+* **3 (Retry Failure):** Sending failed after all 3 attempts.
 
 ⚙️ 3. Runtime Execution Flow
 3.1 Cron‑Triggered Execution
@@ -196,11 +217,13 @@ Halts on failure
 Logs everything
 
 🛡️ 4. Reliability, Error Handling & Idempotency
-4.1 Task Failures
 
-Non‑zero exit codes produce ERROR log entries.
+### 4.1 Task and Workflow Failure Response
 
-Scheduler continues with remaining tasks.
+The framework is designed for predictable failure behavior:
+
+* **Task Failures:** Non‑zero exit codes from a task execution produce highly visible **ERROR** log entries. The Scheduler is robust; it logs the failure but **continues** processing any remaining scheduled tasks.
+* **Workflow Failures:** The Workflow Engine operates in a "fail-fast" mode. If any intermediate step returns a non-zero code, the engine immediately **halts execution**. Dependent steps are skipped, and the `tswf.sh workflow run` command exits with status **6 (Workflow Error)**.
 
 4.2 Workflow Failure Handling
 
