@@ -156,8 +156,6 @@ A core reliability feature of TSWF is the use of **standardized exit codes** acr
 | **5** | **Permission Denied** | Setup/teardown failed due to insufficient user rights (e.g., `install-cron`). |
 | **6** | **Workflow Error** | The workflow engine failed during step execution or dependency parsing. |
 
----
-
 ### 2.9 Email Notification Utility - `bin/email.sh`
 
 The `email.sh` utility provides a centralized, fault-tolerant mechanism for sending notifications. It relies on system mail utilities (`mailx` preferred, `sendmail` fallback).
