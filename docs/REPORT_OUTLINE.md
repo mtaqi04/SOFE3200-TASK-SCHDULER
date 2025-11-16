@@ -110,27 +110,49 @@ This structure makes debugging and automated testing easy.
 
 2.6 Workflow Engine — workflows/engine.sh
 
-The workflow engine executes linear or dependency‑based workflows.
+The Workflow Engine executes workflow files defined using the Workflow DSL. It supports linear and dependency-based task execution.
 
-Example workflow file:
+Example Workflow
+tasks:
+  - name: build
+    cmd: ./scripts/build.sh
 
-- name: build
-  cmd: ./scripts/build.sh
+  - name: test
+    cmd: ./scripts/test.sh
+    depends_on: [build]
+
+Features
+
+- Executes tasks in order based on dependencies
+
+- Stops on failure (unless DSL rules override)
+
+- Logs every workflow event
+
+- Supports nested and multi-level dependencies
+
+2.7 Workflow Validator — workflows/validator.sh
+
+The Workflow Validator checks workflow files for structure and correctness before execution.
+
+What It Validates - 
+
+- Valid YAML syntax
+
+- Required fields: name, cmd
+
+- Unique task names
+
+- Valid depends_on references
+
+- Correct on_fail formats (skip, continue, retry:N)
+
+Usage
+
+./workflows/validator.sh workflows/sample.yaml
 
 
-- name: test
-  cmd: ./scripts/test.sh
-  depends_on: [build]
-
-Capabilities:
-
-Executes steps in order
-
-Detects and stops execution on failure
-
-Logs every workflow event
-
-Supports nested dependencies
+A workflow must pass validation before the engine executes it.
 
 ⚙️ 3. Runtime Execution Flow
 3.1 Cron‑Triggered Execution
