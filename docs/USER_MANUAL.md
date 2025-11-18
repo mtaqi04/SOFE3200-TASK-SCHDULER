@@ -169,3 +169,104 @@ Logs are stored locally within the TSWF project structure, usually in the  `logs
 During development or testing, you can prevent actual emails from being sent by setting the `MOCK_EMAIL` environment variable. The email content and status will instead be printed to the console/log.
 
 ```export MOCK_EMAIL=1```
+
+
+
+
+
+
+
+
+
+
+
+
+CLI Usage & Example Scenarios
+General Syntax
+./tswf.sh [--verbose] [--dry-run] <command> <subcommand> [arguments]
+
+
+Global Flags:
+
+--verbose — Show detailed logs during execution.
+
+--dry-run — Simulate actions without making any real changes.
+
+Available Commands & Subcommands:
+
+Command	Subcommand	Description
+task	add	Add a new recurring task.
+	rm	Remove an existing task by name.
+	ls	List all registered tasks in a formatted table.
+workflow	run	Execute a workflow by running all tasks sequentially.
+help	—	Display the help menu with available commands.
+
+Supported Frequencies for Tasks: daily, weekly, monthly
+
+Time Format: HH:MM (24-hour clock)
+
+Example Scenarios
+
+Adding a New Task
+
+./tswf.sh task add "Write Report" daily 14:00 "echo 'Writing report...'"
+
+
+Adds a task named Write Report to run daily at 14:00.
+
+Command associated: echo 'Writing report...'.
+
+Removing a Task
+
+./tswf.sh task rm "Write Report"
+
+
+Deletes the task with the name Write Report.
+
+If task does not exist, an error is shown.
+
+Listing Tasks
+
+./tswf.sh task ls
+
+
+Displays all tasks in a table with ID, Name, Frequency, Time, and Command.
+
+Example output:
+
+ID             Name                 Freq     Time   Command
+-------------- -------------------- -------- ------ -------
+1697412345     Write Report         daily    14:00  echo 'Writing report...'
+
+
+Running a Workflow
+
+./tswf.sh workflow run "Morning Routine"
+
+
+Executes all tasks in the current task database sequentially.
+
+Each task logs its execution and prints a message.
+
+With --dry-run, tasks are not executed but commands are displayed.
+
+Verbose Mode
+
+./tswf.sh --verbose task ls
+
+
+Shows detailed logs alongside the standard task list.
+
+Dry-Run Mode
+
+./tswf.sh --dry-run task add "Backup Files" weekly 23:00 "tar -czf backup.tar.gz ~/Documents"
+
+
+Displays what would happen without actually modifying the task database.
+
+Combined Flags
+
+./tswf.sh --verbose --dry-run workflow run "Weekly Cleanup"
+
+
+Simulates running a workflow while showing detailed log messages.
