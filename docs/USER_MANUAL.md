@@ -181,6 +181,10 @@ During development or testing, you can prevent actual emails from being sent by 
 
 
 
+
+
+
+
 ## CLI Usage & Example Scenarios
 
 ### General Syntax
@@ -273,7 +277,4 @@ Copy code
 
 ---
 
-### Notes & Tips
-- Task IDs are generated automatically and are used internally; users typically reference tasks by name.
-- Use `./tswf.sh help` at any time to see the latest available commands and flags.
-- Ensure the `.env` file exists if you want custom paths for `TASK_DB` and `LOG_FILE`; o
+
