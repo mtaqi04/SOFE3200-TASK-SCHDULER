@@ -181,92 +181,99 @@ During development or testing, you can prevent actual emails from being sent by 
 
 
 
-CLI Usage & Example Scenarios
-General Syntax
+## CLI Usage & Example Scenarios
+
+### General Syntax
 ./tswf.sh [--verbose] [--dry-run] <command> <subcommand> [arguments]
 
+markdown
+Copy code
 
-Global Flags:
+**Global Flags:**
+- `--verbose` — Show detailed logs during execution.
+- `--dry-run` — Simulate actions without making any real changes.
 
---verbose — Show detailed logs during execution.
+**Available Commands & Subcommands:**
 
---dry-run — Simulate actions without making any real changes.
+| Command   | Subcommand | Description |
+|-----------|------------|-------------|
+| `task`    | `add`      | Add a new recurring task. |
+|           | `rm`       | Remove an existing task by name. |
+|           | `ls`       | List all registered tasks in a formatted table. |
+| `workflow`| `run`      | Execute a workflow by running all tasks sequentially. |
+| `help`    | —          | Display the help menu with available commands. |
 
-Available Commands & Subcommands:
+**Supported Frequencies for Tasks:** `daily`, `weekly`, `monthly`  
 
-Command	Subcommand	Description
-task	add	Add a new recurring task.
-	rm	Remove an existing task by name.
-	ls	List all registered tasks in a formatted table.
-workflow	run	Execute a workflow by running all tasks sequentially.
-help	—	Display the help menu with available commands.
+**Time Format:** `HH:MM` (24-hour clock)
 
-Supported Frequencies for Tasks: daily, weekly, monthly
+---
 
-Time Format: HH:MM (24-hour clock)
+### Example Scenarios
 
-Example Scenarios
-
-Adding a New Task
-
+1. **Adding a New Task**
 ./tswf.sh task add "Write Report" daily 14:00 "echo 'Writing report...'"
 
+markdown
+Copy code
+- Adds a task named `Write Report` to run daily at 14:00.
+- Command associated: `echo 'Writing report...'`.
 
-Adds a task named Write Report to run daily at 14:00.
-
-Command associated: echo 'Writing report...'.
-
-Removing a Task
-
+2. **Removing a Task**
 ./tswf.sh task rm "Write Report"
 
+markdown
+Copy code
+- Deletes the task with the name `Write Report`.
+- If task does not exist, an error is shown.
 
-Deletes the task with the name Write Report.
-
-If task does not exist, an error is shown.
-
-Listing Tasks
-
+3. **Listing Tasks**
 ./tswf.sh task ls
 
+css
+Copy code
+- Displays all tasks in a table with ID, Name, Frequency, Time, and Command.
+- Example output:
+ID Name Freq Time Command
 
-Displays all tasks in a table with ID, Name, Frequency, Time, and Command.
+1697412345 Write Report daily 14:00 echo 'Writing report...'
 
-Example output:
+markdown
+Copy code
 
-ID             Name                 Freq     Time   Command
--------------- -------------------- -------- ------ -------
-1697412345     Write Report         daily    14:00  echo 'Writing report...'
-
-
-Running a Workflow
-
+4. **Running a Workflow**
 ./tswf.sh workflow run "Morning Routine"
 
+pgsql
+Copy code
+- Executes all tasks in the current task database sequentially.
+- Each task logs its execution and prints a message.
+- With `--dry-run`, tasks are not executed but commands are displayed.
 
-Executes all tasks in the current task database sequentially.
-
-Each task logs its execution and prints a message.
-
-With --dry-run, tasks are not executed but commands are displayed.
-
-Verbose Mode
-
+5. **Verbose Mode**
 ./tswf.sh --verbose task ls
 
+markdown
+Copy code
+- Shows detailed logs alongside the standard task list.
 
-Shows detailed logs alongside the standard task list.
-
-Dry-Run Mode
-
+6. **Dry-Run Mode**
 ./tswf.sh --dry-run task add "Backup Files" weekly 23:00 "tar -czf backup.tar.gz ~/Documents"
 
+markdown
+Copy code
+- Displays what would happen without actually modifying the task database.
 
-Displays what would happen without actually modifying the task database.
-
-Combined Flags
-
+7. **Combined Flags**
 ./tswf.sh --verbose --dry-run workflow run "Weekly Cleanup"
 
+yaml
+Copy code
+- Simulates running a workflow while showing detailed log messages.
 
-Simulates running a workflow while showing detailed log messages.
+---
+
+### Notes & Tips
+- Task IDs are generated automatically and are used internally; users typically reference tasks by name.
+- Use `./tswf.sh help` at any time to see the latest available commands and flags.
+- Ensure the `.env` file exists if you want custom paths for `TASK_DB` and `LOG_FILE`; o
