@@ -23,7 +23,7 @@ source "${root}/scheduler/lib/logging.sh"
 env_file="${root}/config/env/email.env"
 if [[ -f "$env_file" ]]; then
 
-  # shellcheck disable = SC1090
+  # shellcheck disable=SC1090
   source "$env_file"
 else
   log_warn "email" "Config not found at ${env_file}, using default settings"
@@ -75,8 +75,17 @@ send_email() {
       return 2 # Dependency failure
     fi
 
-    if [[ $? -eq 0 ]]; then
+    if [[ $exit_code -eq 0 ]]; then
       log_info "email" "Sent email to ${to} with subject '${subject}' (attempt ${attempt})"
+      echo "✅ Email sent to ${to} with subject '${subject}' on attempt $attempt."
+      success=true
+      break
+    else
+      log_warn "email" "Attempt ${attempt} failed (exit code ${exit_code}). Retrying in ${retry_delay}s..."
+      echo "❌ Failed to send email. Retrying in $retry_delay seconds..."
+      ((attempt++))
+      sleep "$retry_delay"
+    fi
       echo "✅ Email sent to ${to} with subject '${subject}' on attempt $attempt."
       success=true
       break
@@ -94,7 +103,7 @@ send_email() {
     return 3 # Retry failure
   fi
 
-  return 0 # SUccess
+  return 0 # Success
 
 }
 

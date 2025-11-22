@@ -8,7 +8,9 @@ set -euo pipefail
 #   timestamp=<ISO8601> level=<LEVEL> component=<NAME> <extra key=value fields/message>
 #
 # Callers are expected to include structured fields like:
-#   run_id=..., task=..., exit=..., msg="..."
+#   run_id=..., task=..., exit=..., event=..., step=...
+
+# ...rest unchanged...
 
 # Resolve repo root (two levels up: scheduler/lib -> scheduler -> root)
 __tswf_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
