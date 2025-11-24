@@ -5,7 +5,9 @@
 
 ## 📘 Overview
 
-The **Task Scheduling & Workflow System (TSWF)** is a **Bash-based automation framework** designed to schedule, execute, and manage recurring or dependent tasks in a Linux environment.
+The **Task Scheduling & Workflow System (TSWF)** is a modular Bash-based automation framework that schedules recurring tasks, executes multi-step workflows, handles failures, provides email notifications, and integrates with `cron`.  
+
+The system is fully extensible, portable, and built using core UNIX/Linux principles such as process control, shell scripting, file-based state tracking, error handling, and logging.
 
 The system enables users to:
 - Define and register scheduled tasks.
@@ -16,8 +18,7 @@ The system enables users to:
 - Integrate with system schedulers like **cron** and **anacron**.
 
 This project demonstrates the integration of **scheduling, automation, process management, and error handling** in UNIX-based systems — a practical application of key **System Programming** principles.
-
----
+  
 
 ## 👥 Team Members
 
